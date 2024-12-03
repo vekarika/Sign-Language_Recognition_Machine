@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utibe's Sign Language Recognition Machine</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        /* Page styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #E8D7C4; /* Soft brown background */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h2 {
+            font-size: 2em;
+            color: #774936; /* Darker shade for title */
+            margin-bottom: 20px;
+        }
+        #webcam-container {
+            margin-top: 20px;
+        }
+        #label-container div {
+            font-size: 18px;
+            color: #fff;
+            padding: 8px;
+            margin: 5px;
+            border-radius: 8px;
+            text-align: center;
+            width: 350px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .start-button {
+            font-size: 1.2em;
+            padding: 10px 20px;
+            margin-top: 15px;
+            background-color: #6C5B7B;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .start-button:hover {
+            background-color: #355C7D;
+        }
+    </style>
+</head>
+<body>
+    <h2>Utibe's Sign Language Recognition Machine</h2>
+    <button class="start-button" onclick="init()">Start Webcam</button>
+    <div id="webcam-container"></div>
+    <div id="label-container"></div>
+
+    <script type="text/javascript">
+        // Teachable Machine model URL
+        const URL = "https://teachablemachine.withgoogle.com/models/NWlaCm9xm/
+";
+
+        let model, webcam, labelContainer, maxPredictions;
+
+        // Audio files for feedback
+        const audioFiles = {
+            "I": "path/to/I_sound.mp3",
+            "LOVE": "path/to/LOVE_sound.mp3",
+            "YOU": "path/to/YOU_sound.mp3",
+            "HAPPY": "path/to/HAPPY_sound.mp3",
+            "NEW": "path/to/NEW_sound.mp3",
+            "YEAR": "path/to/YEAR_sound.mp3",
+            "THUMBS UP": "path/to/thumbs_up_sound.mp3",
+            "THUMBS DOWN": "path/to/thumbs_down_sound.mp3"
+        };
+
+        // Emoji and explanations for gestures
+        const gestureDetails = {
+            "I": { emoji: "👆", explanation: "Represents 'I'" },
+            "LOVE": { emoji: "❤️", explanation: "Represents love" },
+            "YOU": { emoji: "👉", explanation: "Represents 'you'" },
+            "HAPPY": { emoji: "😊", explanation: "Represents happiness" },
+            "NEW": { emoji: "🆕", explanation: "Indicates something new" },
+            "YEAR": { emoji: "🎉", explanation: "Signifies 'year'" },
+            "THUMBS UP": { emoji: "👍", explanation: "Good job or approval" },
+            "THUMBS DOWN": { emoji: "👎", explanation: "Disapproval or no" }
+        };
+
+        // Initialize model and webcam
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            // Load the Teachable Machine model and metadata
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            // Set up the webcam with flip
+            const flip = true;
+            webcam = new http://tmImage.Webcam(300, 300, flip);
+            await webcam.setup();
+            await http://webcam.play();
+            window.requestAnimationFrame(loop);
+
+            // Add webcam canvas to page
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
+            
+            // Prepare labels with styled containers
+            for (let i = 0; i < maxPredictions; i++) {
+                const labelDiv = document.createElement("div");
+                labelContainer.appendChild(labelDiv);
+            }
+        }
+
+        // Loop for webcam updates and predictions
+        async function loop() {
+            webcam.update(); // Update webcam frame
+            await predict(); // Get predictions
+            window.requestAnimationFrame(loop); // Continue looping
+        }
+
+        // Play the audio for a gesture
+        function playAudioForGesture(gesture) {
+            if (audioFiles[gesture]) {
+                const audio = new Audio(audioFiles[gesture]);
+                http://audio.play();
+            }
+        }
+
+        // Run prediction on the webcam image
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            let highestPrediction = { className: "", probability: 0 };
+
+            // Find the highest prediction
+            for (let i = 0; i < maxPredictions; i++) {
+                if (prediction[i].probability > highestPrediction.probability) {
+                    highestPrediction = prediction[i];
+                }
+            }
+
+            // Display the highest confidence prediction only
+            labelContainer.childNodes.forEach((node, index) => {
+                if (index === 0) {
+                    const { emoji, explanation } = gestureDetails[highestPrediction.className] || {};
+                    node.innerHTML = `${emoji} ${highestPrediction.className}: ${(highestPrediction.probability * 100).toFixed(2)}% - ${explanation}`;
+                    http://node.style.backgroundColor = "#6C5B7B";
+                    playAudioForGesture(highestPrediction.className);
+                } else {
+                    http://node.style.display = "none";
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+8:25 AM
+
